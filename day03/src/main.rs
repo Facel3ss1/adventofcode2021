@@ -47,7 +47,7 @@ fn search_for_rating<'a>(search_space: &[&'a str], bit_idx: usize, most_common: 
         Ordering::Equal => search_space[0],
         // Alternative case: we need to reduce the search space
         Ordering::Greater => {
-            // Find the index of the first 1
+            // Find the index of the first 1 in the bit_idx column
             let one_idx = search_space
                 .iter()
                 .map(|&l| l.chars().nth(bit_idx).unwrap())
@@ -56,21 +56,21 @@ fn search_for_rating<'a>(search_space: &[&'a str], bit_idx: usize, most_common: 
                 .unwrap_or(search_space.len() - 1);
 
             // Use the index of the first 1 in relation to the halfway point of
-            // the search space to work out which number is most common.
-            // The xor shenangians will flip the result of the first condition
-            // when most_common is false so we find the least common value
-            // instead of the most common value
-            if (one_idx <= search_space.len() / 2) ^ !most_common {
+            // the search space to work out which number is most common. We then
+            // reduce the search space to only the lines which have that number
+            // in the bit_idx column.
+            // The xor shenangians will flip the result of the condition when
+            // most_common is false so we find the least common value instead
+            let new_search_space = if (one_idx <= search_space.len() / 2) ^ !most_common {
                 // 1s are the most/least common
-                search_for_rating(
-                    &search_space[one_idx..search_space.len()],
-                    bit_idx + 1,
-                    most_common,
-                )
+                &search_space[one_idx..search_space.len()]
             } else {
                 // 0s are the most/least common
-                search_for_rating(&search_space[0..one_idx], bit_idx + 1, most_common)
-            }
+                &search_space[0..one_idx]
+            };
+
+            // Search the next column using the remaining lines
+            search_for_rating(new_search_space, bit_idx + 1, most_common)
         }
         Ordering::Less => unreachable!(),
     }
@@ -88,7 +88,7 @@ fn task2(lines: &mut [&str]) {
     let co2_rating = bool_iter_to_num(co2_line.chars().map(|c| c == '1'));
 
     println!(
-        "Task 2: O2 scrubber rating = {}, CO2 scrubber rating = {}",
+        "Task 2: O2 generator rating = {}, CO2 scrubber rating = {}",
         o2_rating, co2_rating
     );
     println!("Task 2 Answer: {}", o2_rating * co2_rating);
