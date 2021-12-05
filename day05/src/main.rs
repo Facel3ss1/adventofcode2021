@@ -1,9 +1,10 @@
+use derive_more::{AddAssign, Sub};
+
 use std::cmp::max;
 use std::collections::HashSet;
 use std::iter;
-use std::ops::{AddAssign, Sub};
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, AddAssign, Sub)]
 struct Vec2 {
     x: i32,
     y: i32,
@@ -18,21 +19,6 @@ impl Vec2 {
         let mut nums = input.split(',').map(str::parse).map(Result::unwrap);
 
         Self::new(nums.next().unwrap(), nums.next().unwrap())
-    }
-}
-
-impl AddAssign for Vec2 {
-    fn add_assign(&mut self, rhs: Self) {
-        self.x += rhs.x;
-        self.y += rhs.y;
-    }
-}
-
-impl Sub for Vec2 {
-    type Output = Vec2;
-
-    fn sub(self, rhs: Self::Output) -> Vec2 {
-        Vec2::new(self.x - rhs.x, self.y - rhs.y)
     }
 }
 
@@ -56,6 +42,7 @@ impl Line {
         self.a.x == self.b.x || self.a.y == self.b.y
     }
 
+    // A unit vector of the line's direction
     fn direction(&self) -> Vec2 {
         let dir = self.b - self.a;
 
@@ -63,21 +50,24 @@ impl Line {
         Vec2::new(dir.x.signum(), dir.y.signum())
     }
 
-    fn length(&self) -> i32 {
+    // The number of points on the line
+    fn length(&self) -> usize {
         let dir = self.b - self.a;
 
-        max(dir.x.abs(), dir.y.abs())
+        max(dir.x.abs(), dir.y.abs()) as usize + 1
     }
 
+    // An iterator of all the points on the line
     fn points(&self) -> impl Iterator<Item = Vec2> + '_ {
         let mut current_pos = self.a;
 
         iter::repeat_with(move || {
             let old_pos = current_pos;
             current_pos += self.direction();
+
             old_pos
         })
-        .take(self.length() as usize + 1)
+        .take(self.length())
     }
 }
 
@@ -95,12 +85,11 @@ impl Grid {
     }
 
     fn apply_line(&mut self, line: &Line) {
-        for pos in line.points() {
-            if self.seen_points.contains(&pos) {
-                self.output_points.insert(pos);
-            } else {
-                self.seen_points.insert(pos);
-            };
+        for point in line.points() {
+            if !self.seen_points.insert(point) {
+                // The point was already in seen_points
+                self.output_points.insert(point);
+            }
         }
     }
 
@@ -110,19 +99,22 @@ impl Grid {
 }
 
 fn main() {
-    let lines: Vec<Line> = include_str!("input.txt").lines().map(Line::parse).collect();
+    let (orthogonal_lines, diagonal_lines): (Vec<Line>, Vec<Line>) = include_str!("input.txt")
+        .lines()
+        .map(Line::parse)
+        .partition(|l| l.is_orthogonal());
 
-    let mut grid1 = Grid::new();
-    let mut grid2 = Grid::new();
+    let mut grid = Grid::new();
 
-    for line in lines {
-        if line.is_orthogonal() {
-            grid1.apply_line(&line);
-        }
-
-        grid2.apply_line(&line);
+    for line in orthogonal_lines {
+        grid.apply_line(&line);
     }
 
-    println!("Task 1: {}", grid1.output());
-    println!("Task 2: {}", grid2.output());
+    println!("Task 1: {}", grid.output());
+
+    for line in diagonal_lines {
+        grid.apply_line(&line);
+    }
+
+    println!("Task 2: {}", grid.output());
 }
