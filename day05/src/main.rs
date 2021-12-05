@@ -1,21 +1,24 @@
 use std::cmp::max;
+use std::collections::HashMap;
 use std::fmt::Display;
-use std::ops::{AddAssign, Index, IndexMut, Sub};
+use std::iter;
+use std::ops::{AddAssign, Sub};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct Vec2 {
     x: i32,
     y: i32,
 }
 
 impl Vec2 {
+    fn new(x: i32, y: i32) -> Self {
+        Self { x, y }
+    }
+
     fn parse(input: &str) -> Self {
         let mut nums = input.split(',').map(str::parse).map(Result::unwrap);
 
-        Self {
-            x: nums.next().unwrap(),
-            y: nums.next().unwrap(),
-        }
+        Self::new(nums.next().unwrap(), nums.next().unwrap())
     }
 }
 
@@ -30,10 +33,7 @@ impl Sub for Vec2 {
     type Output = Vec2;
 
     fn sub(self, rhs: Self::Output) -> Vec2 {
-        Vec2 {
-            x: self.x - rhs.x,
-            y: self.y - rhs.y,
-        }
+        Vec2::new(self.x - rhs.x, self.y - rhs.y)
     }
 }
 
@@ -61,10 +61,7 @@ impl Line {
         let dir = self.b - self.a;
 
         // We know the lines will only be right angles or diagonals
-        Vec2 {
-            x: dir.x.signum(),
-            y: dir.y.signum(),
-        }
+        Vec2::new(dir.x.signum(), dir.y.signum())
     }
 
     fn length(&self) -> i32 {
@@ -73,37 +70,32 @@ impl Line {
         max(dir.x.abs(), dir.y.abs())
     }
 
-    fn points(&self) -> impl Iterator<Item = Vec2> {
-        [self.a, self.b].into_iter()
+    fn points(&self) -> impl Iterator<Item = Vec2> + '_ {
+        let mut current_pos = self.a;
+
+        iter::repeat_with(move || {
+            let old_pos = current_pos;
+            current_pos += self.direction();
+            old_pos
+        })
+        .take(self.length() as usize + 1)
     }
 }
 
 struct Grid {
-    rows: Vec<Vec<i32>>,
-}
-
-impl Index<Vec2> for Grid {
-    type Output = i32;
-
-    fn index(&self, index: Vec2) -> &Self::Output {
-        &self.rows[index.y as usize][index.x as usize]
-    }
-}
-
-impl IndexMut<Vec2> for Grid {
-    fn index_mut(&mut self, index: Vec2) -> &mut Self::Output {
-        &mut self.rows[index.y as usize][index.x as usize]
-    }
+    points: HashMap<Vec2, usize>,
 }
 
 impl Display for Grid {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for row in self.rows.iter() {
-            for &num in row {
-                if num == 0 {
-                    write!(f, ".")?;
-                } else {
+        for y in 0..self.grid_size() {
+            for x in 0..self.grid_size() {
+                let point = Vec2::new(x, y);
+
+                if let Some(&num) = self.points.get(&point) {
                     write!(f, "{}", num)?;
+                } else {
+                    write!(f, ".")?;
                 }
             }
 
@@ -115,27 +107,30 @@ impl Display for Grid {
 }
 
 impl Grid {
-    fn new(size: usize) -> Self {
+    fn new() -> Self {
         Self {
-            rows: vec![vec![0; size]; size],
+            points: HashMap::new(),
         }
+    }
+
+    fn grid_size(&self) -> i32 {
+        self.points.keys().map(|p| max(p.x, p.y)).max().unwrap() + 1
     }
 
     fn apply_line(&mut self, line: &Line) {
-        let mut current_pos = line.a;
-        let dir = line.direction();
-
-        for _ in 0..=line.length() {
-            self[current_pos] += 1;
-            current_pos += dir;
+        for pos in line.points() {
+            if let Some(p) = self.points.get_mut(&pos) {
+                *p += 1;
+            } else {
+                self.points.insert(pos, 1);
+            };
         }
     }
 
-    fn output(self) -> usize {
-        self.rows
-            .into_iter()
-            .flat_map(|row| row.into_iter())
-            .filter(|&line_count| line_count >= 2)
+    fn output(&self) -> usize {
+        self.points
+            .values()
+            .filter(|&&line_count| line_count >= 2)
             .count()
     }
 }
@@ -143,17 +138,8 @@ impl Grid {
 fn main() {
     let lines: Vec<Line> = include_str!("input.txt").lines().map(Line::parse).collect();
 
-    // Find the maximum extents of the grid
-    let grid_size = lines
-        .iter()
-        .flat_map(|l| l.points())
-        .map(|p| max(p.x, p.y))
-        .max()
-        .unwrap() as usize
-        + 1;
-
-    let mut grid1 = Grid::new(grid_size);
-    let mut grid2 = Grid::new(grid_size);
+    let mut grid1 = Grid::new();
+    let mut grid2 = Grid::new();
 
     for line in lines {
         if line.is_orthogonal() {
@@ -163,7 +149,7 @@ fn main() {
         grid2.apply_line(&line);
     }
 
-    if grid_size <= 10 {
+    if grid1.grid_size() <= 10 {
         println!("{}", grid1);
         println!("{}", grid2);
     }
