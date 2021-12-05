@@ -1,6 +1,5 @@
 use std::cmp::max;
-use std::collections::HashMap;
-use std::fmt::Display;
+use std::collections::HashSet;
 use std::iter;
 use std::ops::{AddAssign, Sub};
 
@@ -83,55 +82,30 @@ impl Line {
 }
 
 struct Grid {
-    points: HashMap<Vec2, usize>,
-}
-
-impl Display for Grid {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for y in 0..self.grid_size() {
-            for x in 0..self.grid_size() {
-                let point = Vec2::new(x, y);
-
-                if let Some(&num) = self.points.get(&point) {
-                    write!(f, "{}", num)?;
-                } else {
-                    write!(f, ".")?;
-                }
-            }
-
-            writeln!(f)?;
-        }
-
-        Ok(())
-    }
+    seen_points: HashSet<Vec2>,
+    output_points: HashSet<Vec2>,
 }
 
 impl Grid {
     fn new() -> Self {
         Self {
-            points: HashMap::new(),
+            seen_points: HashSet::new(),
+            output_points: HashSet::new(),
         }
-    }
-
-    fn grid_size(&self) -> i32 {
-        self.points.keys().map(|p| max(p.x, p.y)).max().unwrap() + 1
     }
 
     fn apply_line(&mut self, line: &Line) {
         for pos in line.points() {
-            if let Some(p) = self.points.get_mut(&pos) {
-                *p += 1;
+            if self.seen_points.contains(&pos) {
+                self.output_points.insert(pos);
             } else {
-                self.points.insert(pos, 1);
+                self.seen_points.insert(pos);
             };
         }
     }
 
     fn output(&self) -> usize {
-        self.points
-            .values()
-            .filter(|&&line_count| line_count >= 2)
-            .count()
+        self.output_points.len()
     }
 }
 
@@ -147,11 +121,6 @@ fn main() {
         }
 
         grid2.apply_line(&line);
-    }
-
-    if grid1.grid_size() <= 10 {
-        println!("{}", grid1);
-        println!("{}", grid2);
     }
 
     println!("Task 1: {}", grid1.output());
