@@ -9,13 +9,9 @@ impl Board {
         };
 
         for (i, line) in lines.iter().enumerate().take(5) {
-            let row_numbers: Vec<i32> = line
-                .split_whitespace()
-                .map(str::parse)
-                .map(Result::unwrap)
-                .collect();
+            let row_numbers = line.split_whitespace().map(str::parse).map(Result::unwrap);
 
-            for (j, &num) in row_numbers.iter().enumerate().take(5) {
+            for (j, num) in row_numbers.into_iter().enumerate().take(5) {
                 board.rows[i][j].0 = num;
             }
         }
