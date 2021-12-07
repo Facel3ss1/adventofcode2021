@@ -18,8 +18,8 @@ fn main() {
 
     // The median of the positions is the optimal position.
     // This is because the median minimises the distances to all of the points.
-    positions.sort_unstable();
-    let median_pos = positions[(positions.len() / 2) - 1];
+    let median_idx = (positions.len() / 2) - 1;
+    let (_, &mut median_pos, _) = positions.select_nth_unstable(median_idx);
 
     let fuel_task1: i32 = positions
         .iter()
@@ -36,8 +36,8 @@ fn main() {
     let mean_ceil = mean_floor + 1;
 
     let fuel_task2: i32 = [mean_floor, mean_ceil]
-        .iter()
-        .map(|&pos| {
+        .into_iter()
+        .map(|pos| {
             positions
                 .iter()
                 .map(|&crab_pos| task2_dist(crab_pos, pos))
