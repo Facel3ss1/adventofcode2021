@@ -72,51 +72,28 @@ impl Entry {
         }
     }
 
-    // Works out the numbers using process of elimination and bit manipulation
-    // Then uses the numbers to calculate the output value
     fn find_value(self) -> usize {
         let &one = self.unique_patterns.iter().find(|s| s.len() == 2).unwrap();
         let &four = self.unique_patterns.iter().find(|s| s.len() == 4).unwrap();
-        let &seven = self.unique_patterns.iter().find(|s| s.len() == 3).unwrap();
-        let &eight = self.unique_patterns.iter().find(|s| s.is_all()).unwrap();
-
-        let &three = self
-            .unique_patterns
-            .iter()
-            .find(|s| s.len() == 5 && s.contains(one))
-            .unwrap();
-        let nine = three | four;
-
-        let &six = self
-            .unique_patterns
-            .iter()
-            .find(|s| s.len() == 6 && s.contains(eight - seven))
-            .unwrap();
-        let &five = self
-            .unique_patterns
-            .iter()
-            .find(|s| s.len() == 5 && s.contains(nine - one))
-            .unwrap();
-
-        let two = (three - one) | !five;
-        let &zero = self
-            .unique_patterns
-            .iter()
-            .find(|s| s.len() == 6 && s.contains(!five))
-            .unwrap();
-
-        let numbers = [zero, one, two, three, four, five, six, seven, eight, nine];
 
         self.output_values
             .into_iter()
-            .map(|output| {
-                numbers
-                    .iter()
-                    .enumerate()
-                    .find(|(_, &s)| s == output)
-                    .unwrap()
-                    .0
-            })
+            .map(
+                // Credit to u/frankbsad for this insane solution
+                |output| match (output.len(), (output & one).len(), (output & four).len()) {
+                    (6, 2, 3) => 0,
+                    (2, 2, 2) => 1,
+                    (5, 1, 2) => 2,
+                    (5, 2, 3) => 3,
+                    (4, 2, 4) => 4,
+                    (5, 1, 3) => 5,
+                    (6, 1, 3) => 6,
+                    (3, 2, 2) => 7,
+                    (7, 2, 4) => 8,
+                    (6, 2, 4) => 9,
+                    (_, _, _) => panic!(),
+                },
+            )
             .fold(0, |acc, num| acc * 10 + num)
     }
 }
