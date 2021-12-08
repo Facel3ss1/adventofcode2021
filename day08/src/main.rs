@@ -1,5 +1,4 @@
 use bitflags::bitflags;
-use itertools::Itertools;
 
 fn task1(input: &[&str]) -> usize {
     input
@@ -12,6 +11,7 @@ fn task1(input: &[&str]) -> usize {
 }
 
 bitflags! {
+    /// A seven bit representation of a segment pattern
     struct Segment: u8 {
         const A = 0b0000001;
         const B = 0b0000010;
@@ -23,21 +23,8 @@ bitflags! {
     }
 }
 
-const ZERO: Segment = Segment::all().difference(Segment::D);
-const ONE: Segment = Segment::C.union(Segment::F);
-const TWO: Segment = Segment::all().difference(Segment::B).difference(Segment::F);
-const THREE: Segment = Segment::all().difference(Segment::B).difference(Segment::E);
-const FOUR: Segment = Segment::B
-    .union(Segment::C)
-    .union(Segment::D)
-    .union(Segment::F);
-const FIVE: Segment = Segment::all().difference(Segment::C).difference(Segment::E);
-const SIX: Segment = Segment::all().difference(Segment::C);
-const SEVEN: Segment = Segment::A.union(Segment::C).union(Segment::F);
-const EIGHT: Segment = Segment::all();
-const NINE: Segment = Segment::all().difference(Segment::E);
-
 impl Segment {
+    /// Parses the string representation into the bit representation
     fn parse(input: &str) -> Self {
         input
             .chars()
@@ -54,42 +41,9 @@ impl Segment {
             .fold(Self::empty(), |acc, seg| acc | seg)
     }
 
-    /// Map a pattern to another pattern using the permutation
-    fn map_permutation(&self, permutation: &[Self; 7]) -> Self {
-        let mut output = Segment::empty();
-
-        for (i, &perm_seg) in permutation.iter().enumerate() {
-            if self.contains(perm_seg) {
-                output |= match i {
-                    0 => Self::A,
-                    1 => Self::B,
-                    2 => Self::C,
-                    3 => Self::D,
-                    4 => Self::E,
-                    5 => Self::F,
-                    6 => Self::G,
-                    _ => unreachable!(),
-                }
-            }
-        }
-
-        output
-    }
-
-    fn to_number(self) -> Option<usize> {
-        match self {
-            ZERO => Some(0),
-            ONE => Some(1),
-            TWO => Some(2),
-            THREE => Some(3),
-            FOUR => Some(4),
-            FIVE => Some(5),
-            SIX => Some(6),
-            SEVEN => Some(7),
-            EIGHT => Some(8),
-            NINE => Some(9),
-            _ => None,
-        }
+    /// Returns the length of the string representation of this pattern
+    fn len(&self) -> u32 {
+        self.bits.count_ones()
     }
 }
 
@@ -118,56 +72,59 @@ impl Entry {
         }
     }
 
-    fn find_value(self, permutations: &[[Segment; 7]]) -> usize {
-        // Find the permutation where all of the patterns are valid
-        let correct_permutation = permutations
+    // Works out the numbers using process of elimination and bit manipulation
+    // Then uses the numbers to calculate the output value
+    fn find_value(self) -> usize {
+        let &one = self.unique_patterns.iter().find(|s| s.len() == 2).unwrap();
+        let &four = self.unique_patterns.iter().find(|s| s.len() == 4).unwrap();
+        let &seven = self.unique_patterns.iter().find(|s| s.len() == 3).unwrap();
+        let &eight = self.unique_patterns.iter().find(|s| s.is_all()).unwrap();
+
+        let &three = self
+            .unique_patterns
             .iter()
-            .find(|perm| {
-                self.unique_patterns
-                    .iter()
-                    .all(|pattern| pattern.map_permutation(perm).to_number().is_some())
-            })
+            .find(|s| s.len() == 5 && s.contains(one))
+            .unwrap();
+        let nine = three | four;
+
+        let &six = self
+            .unique_patterns
+            .iter()
+            .find(|s| s.len() == 6 && s.contains(eight - seven))
+            .unwrap();
+        let &five = self
+            .unique_patterns
+            .iter()
+            .find(|s| s.len() == 5 && s.contains(nine - one))
             .unwrap();
 
-        // Convert the output values into a number
-        self.output_values.into_iter().fold(0, |acc, seg| {
-            (acc * 10)
-                + seg
-                    .map_permutation(correct_permutation)
-                    .to_number()
+        let two = (three - one) | !five;
+        let &zero = self
+            .unique_patterns
+            .iter()
+            .find(|s| s.len() == 6 && s.contains(!five))
+            .unwrap();
+
+        let numbers = [zero, one, two, three, four, five, six, seven, eight, nine];
+
+        self.output_values
+            .into_iter()
+            .map(|output| {
+                numbers
+                    .iter()
+                    .enumerate()
+                    .find(|(_, &s)| s == output)
                     .unwrap()
-        })
+                    .0
+            })
+            .fold(0, |acc, num| acc * 10 + num)
     }
 }
 
 fn task2(input: &[&str]) -> usize {
-    // 7! = 5040, which is brute forceable
-    let permutations: Vec<[Segment; 7]> = [
-        Segment::A,
-        Segment::B,
-        Segment::C,
-        Segment::D,
-        Segment::E,
-        Segment::F,
-        Segment::G,
-    ]
-    .into_iter()
-    .permutations(7)
-    .map(|p| {
-        let mut permutation_array = [Segment::empty(); 7];
-
-        for (i, s) in p.into_iter().enumerate().take(7) {
-            permutation_array[i] = s;
-        }
-
-        permutation_array
-    })
-    .collect();
-
     input
         .iter()
-        .map(|line| Entry::parse(line))
-        .map(|entry| entry.find_value(&permutations))
+        .map(|line| Entry::parse(line).find_value())
         .sum()
 }
 
