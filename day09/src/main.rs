@@ -19,8 +19,8 @@ impl Heightmap {
         self.rows[row][column]
     }
 
-    // Returns the neighbors of a point in the order up, left, down, right
-    fn neighbors(&self, point: (usize, usize)) -> [Option<(usize, usize)>; 4] {
+    // Returns the neighbors of a point
+    fn neighbors(&self, point: (usize, usize)) -> impl Iterator<Item = (usize, usize)> {
         let (row, column) = point;
 
         [
@@ -29,6 +29,8 @@ impl Heightmap {
             (row + 1 < self.dimensions().0).then(|| (row + 1, column)),
             (column + 1 < self.dimensions().1).then(|| (row, column + 1)),
         ]
+        .into_iter()
+        .flatten()
     }
 
     // Returns the height and width, in that order
@@ -44,13 +46,10 @@ fn main() {
 
     let low_points: Vec<(usize, usize)> = (0..rows)
         .flat_map(|i| (0..columns).map(move |j| (i, j)))
-        .filter_map(|p| {
+        .filter(|&p| {
             heightmap
                 .neighbors(p)
-                .into_iter()
-                .flatten()
                 .all(|n| heightmap.get_point(p) < heightmap.get_point(n))
-                .then(|| p)
         })
         .collect();
 
@@ -61,22 +60,22 @@ fn main() {
     let mut basin_sizes: Vec<usize> = low_points
         .iter()
         .map(|&lp| {
+            // Essentially a breadth-first search
             let mut basin_points: HashSet<(usize, usize)> = HashSet::new();
             let mut basin_edges: HashSet<(usize, usize)> = HashSet::new();
-            basin_edges.insert(lp);
+            basin_points.insert(lp);
+            basin_edges.extend(heightmap.neighbors(lp));
 
             while !basin_edges.is_empty() {
                 let mut new_basin_edges = HashSet::new();
 
                 for &p in basin_edges.iter() {
-                    new_basin_edges.extend(heightmap.neighbors(p).into_iter().flatten().filter(
-                        |&n| {
-                            !basin_points.contains(&n)
-                                && !basin_edges.contains(&n)
-                                && heightmap.get_point(p) < heightmap.get_point(n)
-                                && heightmap.get_point(n) != 9
-                        },
-                    ));
+                    new_basin_edges.extend(heightmap.neighbors(p).filter(|&n| {
+                        !basin_points.contains(&n)
+                            && !basin_edges.contains(&n)
+                            && heightmap.get_point(p) < heightmap.get_point(n)
+                            && heightmap.get_point(n) < 9
+                    }));
 
                     basin_points.insert(p);
                 }
