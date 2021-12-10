@@ -3,10 +3,35 @@
 version = 3
 
 [[package]]
+name = "bitflags"
+version = "1.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
+
+[[package]]
 name = "convert_case"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6245d59a3e82a7fc217c5828a6692dbc6dfb63a0c8c90495621f7b9d79704a0e"
+
+[[package]]
+name = "day01"
+version = "0.1.0"
+dependencies = [
+ "itertools",
+]
+
+[[package]]
+name = "day02"
+version = "0.1.0"
+
+[[package]]
+name = "day03"
+version = "0.1.0"
+
+[[package]]
+name = "day04"
+version = "0.1.0"
 
 [[package]]
 name = "day05"
@@ -14,6 +39,29 @@ version = "0.1.0"
 dependencies = [
  "derive_more",
 ]
+
+[[package]]
+name = "day06"
+version = "0.1.0"
+
+[[package]]
+name = "day07"
+version = "0.1.0"
+
+[[package]]
+name = "day08"
+version = "0.1.0"
+dependencies = [
+ "bitflags",
+]
+
+[[package]]
+name = "day09"
+version = "0.1.0"
+
+[[package]]
+name = "day10"
+version = "0.1.0"
 
 [[package]]
 name = "derive_more"
@@ -26,6 +74,21 @@ dependencies = [
  "quote",
  "rustc_version",
  "syn",
+]
+
+[[package]]
+name = "either"
+version = "1.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
+
+[[package]]
+name = "itertools"
+version = "0.10.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a9a9d19fa1e79b6215ff29b9d6880b706147f16e9b1dbb1e4e5947b5b02bc5e3"
+dependencies = [
+ "either",
 ]
 
 [[package]]
