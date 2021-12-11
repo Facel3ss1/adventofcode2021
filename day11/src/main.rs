@@ -16,7 +16,7 @@ impl Grid {
     }
 
     // Returns the neighbors of a point, including diagonals
-    fn neighbors(&self, point: (usize, usize)) -> impl Iterator<Item = (usize, usize)> + '_ {
+    fn neighbors(&self, point: (usize, usize)) -> impl Iterator<Item = (usize, usize)> {
         let (rows, columns) = self.dimensions();
         let (row, column) = point;
 
@@ -85,34 +85,40 @@ fn main() {
     let mut step = 1;
 
     let task2 = loop {
+        // Start by increasing all of the points
         let mut to_increase: Vec<(usize, usize)> = (0..rows)
             .flat_map(|i| (0..columns).map(move |j| (i, j)))
             .collect();
+        // Keep track of the points that have flashed already
         let mut flashed_points = HashSet::new();
 
+        // Keep going until we don't have any more points to increase
         while !to_increase.is_empty() {
             let mut new_to_increase = Vec::new();
 
-            while let Some(point) = to_increase.pop() {
+            for point in to_increase.drain(..) {
                 grid[point] += 1;
 
-                if grid[point] > 9 && !flashed_points.contains(&point) {
+                // If this is a flashed point, increase its neighbors next time
+                if grid[point] > 9 && flashed_points.insert(point) {
                     new_to_increase.extend(grid.neighbors(point));
-                    flashed_points.insert(point);
                 }
             }
 
-            to_increase.extend(new_to_increase.into_iter());
+            to_increase = new_to_increase;
         }
 
+        // Task 1 only cares about the first 100 steps
         if (1..=100).contains(&step) {
             task1 += flashed_points.len();
         }
 
+        // If all of the points have flashed, we've finished Task 2
         if flashed_points.len() == num_points {
             break step;
         }
 
+        // Reset all of the flashed points back to zero
         for flashed_point in flashed_points {
             grid[flashed_point] = 0;
         }
