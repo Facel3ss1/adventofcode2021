@@ -140,6 +140,37 @@ impl Graph {
 
         num_paths
     }
+
+    fn traverse_task2(
+        &self,
+        current_idx: VertexIdx,
+        mut visited: HashSet<VertexIdx>,
+        twice: Option<VertexIdx>,
+    ) -> u32 {
+        if current_idx == VertexIdx::End {
+            return 1;
+        }
+
+        let vertex = self.get_vertex(current_idx);
+
+        if vertex.cave_size == CaveSize::Small {
+            visited.insert(current_idx);
+        }
+
+        let mut num_paths = 0;
+
+        for &neighbor in vertex.neighbors.iter() {
+            if !visited.contains(&neighbor) {
+                num_paths += self.traverse_task2(neighbor, visited.clone(), twice);
+            }
+
+            if visited.contains(&neighbor) && twice.is_none() && neighbor != VertexIdx::Start {
+                num_paths += self.traverse_task2(neighbor, visited.clone(), Some(neighbor));
+            }
+        }
+
+        num_paths
+    }
 }
 
 impl Debug for Graph {
@@ -174,4 +205,8 @@ fn main() {
 
     // println!("{:?}", graph);
     println!("{}", graph.traverse_task1(VertexIdx::Start, HashSet::new()));
+    println!(
+        "{}",
+        graph.traverse_task2(VertexIdx::Start, HashSet::new(), None)
+    );
 }
