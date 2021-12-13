@@ -119,53 +119,38 @@ impl Graph {
         }
     }
 
-    fn traverse_task1(&self, current_idx: VertexIdx, mut visited: HashSet<VertexIdx>) -> u32 {
-        if current_idx == VertexIdx::End {
-            return 1;
-        }
-
-        let vertex = self.get_vertex(current_idx);
-
-        if vertex.cave_size == CaveSize::Small {
-            visited.insert(current_idx);
-        }
-
-        let mut num_paths = 0;
-
-        for &neighbor in vertex.neighbors.iter() {
-            if !visited.contains(&neighbor) {
-                num_paths += self.traverse_task1(neighbor, visited.clone());
-            }
-        }
-
-        num_paths
-    }
-
-    fn traverse_task2(
+    fn traverse(
         &self,
         current_idx: VertexIdx,
         mut visited: HashSet<VertexIdx>,
         twice: Option<VertexIdx>,
     ) -> u32 {
+        // Base case: we have reached the end
         if current_idx == VertexIdx::End {
             return 1;
         }
 
         let vertex = self.get_vertex(current_idx);
 
+        // Add small caves to the set of visited caves
         if vertex.cave_size == CaveSize::Small {
             visited.insert(current_idx);
         }
 
         let mut num_paths = 0;
 
+        // There are two conditions where we can visit a neighbor:
         for &neighbor in vertex.neighbors.iter() {
+            // If it is not in the set of visited small caves
+            // This means large caves get visited regardless
             if !visited.contains(&neighbor) {
-                num_paths += self.traverse_task2(neighbor, visited.clone(), twice);
+                num_paths += self.traverse(neighbor, visited.clone(), twice);
             }
 
+            // If it is a visited small cave, but we haven't visited anything twice yet
+            // Note that you can't visit the starting vertex twice
             if visited.contains(&neighbor) && twice.is_none() && neighbor != VertexIdx::Start {
-                num_paths += self.traverse_task2(neighbor, visited.clone(), Some(neighbor));
+                num_paths += self.traverse(neighbor, visited.clone(), Some(neighbor));
             }
         }
 
@@ -204,9 +189,13 @@ fn main() {
     let graph = Graph::parse(include_str!("input.txt").lines());
 
     // println!("{:?}", graph);
-    println!("{}", graph.traverse_task1(VertexIdx::Start, HashSet::new()));
+
+    // Task 1 is a special case of Task 2 where we say we've visited the
+    // starting vertex twice so it doesn't attempt to visit any of the other
+    // vertices twice
     println!(
         "{}",
-        graph.traverse_task2(VertexIdx::Start, HashSet::new(), None)
+        graph.traverse(VertexIdx::Start, HashSet::new(), Some(VertexIdx::Start))
     );
+    println!("{}", graph.traverse(VertexIdx::Start, HashSet::new(), None));
 }
