@@ -5,7 +5,7 @@ use itertools::Itertools;
 #[derive(Debug)]
 struct PairCounts {
     pair_counts: HashMap<(char, char), u64>,
-    counts: HashMap<char, u64>,
+    first_char: char,
     rules: HashMap<(char, char), char>,
 }
 
@@ -20,11 +20,7 @@ impl PairCounts {
             *pair_counts.entry((a, b)).or_default() += 1;
         }
 
-        let mut counts = HashMap::new();
-
-        for char in first_line.chars() {
-            *counts.entry(char).or_default() += 1;
-        }
+        let first_char = first_line.chars().next().unwrap();
 
         let rules = lines
             .map(|line| {
@@ -41,7 +37,7 @@ impl PairCounts {
 
         Self {
             pair_counts,
-            counts,
+            first_char,
             rules,
         }
     }
@@ -55,16 +51,24 @@ impl PairCounts {
 
             *new_pair_counts.entry((a, new_char)).or_default() += count;
             *new_pair_counts.entry((new_char, b)).or_default() += count;
-
-            *self.counts.entry(new_char).or_default() += count;
         }
 
         self.pair_counts = new_pair_counts;
     }
 
     fn answer(&self) -> u64 {
-        let &max = self.counts.values().max().unwrap();
-        let &min = self.counts.values().min().unwrap();
+        let mut counts: HashMap<char, u64> = HashMap::new();
+
+        for (&pair, &count) in self.pair_counts.iter() {
+            let (_, b) = pair;
+
+            *counts.entry(b).or_default() += count;
+        }
+
+        *counts.entry(self.first_char).or_default() += 1;
+
+        let &max = counts.values().max().unwrap();
+        let &min = counts.values().min().unwrap();
 
         max - min
     }
