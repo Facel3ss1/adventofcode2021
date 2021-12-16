@@ -46,8 +46,8 @@ impl Paper {
             points.insert((numbers.next().unwrap(), numbers.next().unwrap()));
         }
 
-        let max_x = points.iter().map(|&(x, _)| x).max().unwrap() + 1;
-        let max_y = points.iter().map(|&(_, y)| y).max().unwrap() + 1;
+        let max_x = points.iter().copied().map(|(x, _)| x).max().unwrap() + 1;
+        let max_y = points.iter().copied().map(|(_, y)| y).max().unwrap() + 1;
         let extents = (max_x, max_y);
 
         Self { points, extents }
@@ -66,8 +66,8 @@ impl Paper {
         let outside_extents: HashSet<(usize, usize)> = self
             .points
             .iter()
-            .filter(|&p| !self.within_extents(p))
             .copied()
+            .filter(|p| !self.within_extents(p))
             .collect();
 
         self.points = self.points.difference(&outside_extents).copied().collect();

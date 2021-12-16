@@ -140,7 +140,7 @@ impl Graph {
         let mut num_paths = 0;
 
         // There are two conditions where we can visit a neighbor:
-        for &neighbor in vertex.neighbors.iter() {
+        for neighbor in vertex.neighbors.iter().copied() {
             // If it is not in the set of visited small caves
             // This means large caves get visited regardless
             if !visited.contains(&neighbor) {
@@ -164,7 +164,8 @@ impl Debug for Graph {
             let neighbors_str = v
                 .neighbors
                 .iter()
-                .map(|&i| self.get_vertex(i).name.as_str())
+                .copied()
+                .map(|i| self.get_vertex(i).name.as_str())
                 .collect::<Vec<_>>()
                 .join(", ");
 

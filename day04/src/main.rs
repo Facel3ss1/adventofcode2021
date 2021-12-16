@@ -38,11 +38,15 @@ impl Board {
     }
 
     fn has_won(&self) -> bool {
-        let completed_row = self.marked_rows().iter().any(|row| row.iter().all(|&m| m));
+        let completed_row = self
+            .marked_rows()
+            .iter()
+            .any(|row| row.iter().copied().all(|m| m));
+
         let completed_col = self
             .marked_columns()
             .iter()
-            .any(|col| col.iter().all(|&m| m));
+            .any(|col| col.iter().copied().all(|m| m));
 
         completed_row || completed_col
     }

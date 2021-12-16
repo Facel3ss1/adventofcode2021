@@ -67,8 +67,8 @@ impl PairCounts {
 
         *counts.entry(self.first_char).or_default() += 1;
 
-        let &max = counts.values().max().unwrap();
-        let &min = counts.values().min().unwrap();
+        let max = counts.values().copied().max().unwrap();
+        let min = counts.values().copied().min().unwrap();
 
         max - min
     }

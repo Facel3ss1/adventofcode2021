@@ -40,7 +40,8 @@ fn main() {
         .map(|pos| {
             positions
                 .iter()
-                .map(|&crab_pos| task2_dist(crab_pos, pos))
+                .copied()
+                .map(|crab_pos| task2_dist(crab_pos, pos))
                 .sum()
         })
         .min()

@@ -53,13 +53,18 @@ fn main() {
         })
         .collect();
 
-    let task1: u32 = low_points.iter().map(|&p| heightmap.get_point(p) + 1).sum();
+    let task1: u32 = low_points
+        .iter()
+        .copied()
+        .map(|p| heightmap.get_point(p) + 1)
+        .sum();
 
     println!("Task 1: {}", task1);
 
     let mut basin_sizes: Vec<usize> = low_points
         .iter()
-        .map(|&lp| {
+        .copied()
+        .map(|lp| {
             // Essentially a breadth-first search
             let mut basin_points: HashSet<(usize, usize)> = HashSet::new();
             let mut basin_edges: HashSet<(usize, usize)> = HashSet::new();
@@ -69,7 +74,7 @@ fn main() {
             while !basin_edges.is_empty() {
                 let mut new_basin_edges = HashSet::new();
 
-                for &p in basin_edges.iter() {
+                for p in basin_edges.iter().copied() {
                     new_basin_edges.extend(heightmap.neighbors(p).filter(|&n| {
                         !basin_points.contains(&n)
                             && !basin_edges.contains(&n)

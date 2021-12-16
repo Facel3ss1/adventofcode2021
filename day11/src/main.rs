@@ -65,7 +65,7 @@ impl IndexMut<(usize, usize)> for Grid {
 impl Display for Grid {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for row in self.rows.iter() {
-            for &num in row.iter() {
+            for num in row.iter().copied() {
                 write!(f, "{}", num)?;
             }
 

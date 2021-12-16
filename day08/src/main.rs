@@ -73,8 +73,19 @@ impl Entry {
     }
 
     fn find_value(self) -> usize {
-        let &one = self.unique_patterns.iter().find(|s| s.len() == 2).unwrap();
-        let &four = self.unique_patterns.iter().find(|s| s.len() == 4).unwrap();
+        let one = self
+            .unique_patterns
+            .iter()
+            .copied()
+            .find(|s| s.len() == 2)
+            .unwrap();
+
+        let four = self
+            .unique_patterns
+            .iter()
+            .copied()
+            .find(|s| s.len() == 4)
+            .unwrap();
 
         self.output_values
             .into_iter()

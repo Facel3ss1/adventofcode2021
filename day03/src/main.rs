@@ -50,7 +50,7 @@ fn search_for_rating<'a>(search_space: &[&'a str], bit_idx: usize, most_common: 
             // Find the index of the first 1 in the bit_idx column
             let one_idx = search_space
                 .iter()
-                .map(|&l| l.chars().nth(bit_idx).unwrap())
+                .map(|l| l.chars().nth(bit_idx).unwrap())
                 .position(|b| b == '1')
                 // If there aren't any 1s, return the last index
                 .unwrap_or(search_space.len() - 1);
