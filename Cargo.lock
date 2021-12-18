@@ -122,6 +122,7 @@ name = "day16"
 version = "0.1.0"
 dependencies = [
  "bitvec",
+ "itertools",
  "nom",
  "nom-bitvec",
  "pretty_assertions",

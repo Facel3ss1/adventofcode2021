@@ -10,7 +10,7 @@ use nom::{
 use bitvec::{mem::BitMemory, prelude::*};
 use nom_bitvec::BSlice;
 
-use crate::{Packet, PacketType};
+use crate::{Operator, Packet, PacketType};
 
 type BitInput<'a> = BSlice<'a, Msb0, u8>;
 
@@ -49,13 +49,13 @@ fn last_group(input: BitInput) -> IResult<BitInput, u8> {
     preceded(tag(BSlice(bits![0])), take_bits(4))(input)
 }
 
-fn literal(input: BitInput) -> IResult<BitInput, u32> {
+fn literal(input: BitInput) -> IResult<BitInput, u64> {
     map(many_till(group, last_group), |(groups, last)| {
         let groups_num = groups
             .into_iter()
-            .fold(0, |acc, num| (acc << 4) | (num as u32));
+            .fold(0, |acc, num| (acc << 4) | (num as u64));
 
-        (groups_num << 4) | (last as u32)
+        (groups_num << 4) | (last as u64)
     })(input)
 }
 
@@ -82,7 +82,9 @@ fn packet_type(input: BitInput) -> IResult<BitInput, PacketType> {
 
     match packet_type_id {
         4 => map(literal, PacketType::Literal)(input),
-        _ => map(operator, PacketType::Operator)(input),
+        _ => map(operator, |operands| {
+            PacketType::Operator(Operator::new(packet_type_id, operands))
+        })(input),
     }
 }
 
@@ -182,22 +184,6 @@ mod tests {
     fn test_task1_examples() {
         let input = "8A004A801A8002F478";
         let output = Packet::parse(input);
-        assert_eq!(
-            output,
-            Packet {
-                version: 4,
-                packet_type: PacketType::Operator(vec![Packet {
-                    version: 1,
-                    packet_type: PacketType::Operator(vec![Packet {
-                        version: 5,
-                        packet_type: PacketType::Operator(vec![Packet {
-                            version: 6,
-                            packet_type: PacketType::Literal(15)
-                        }])
-                    }])
-                }])
-            }
-        );
         assert_eq!(output.version_sum(), 16);
 
         let input = "620080001611562C8802118E34";
@@ -211,5 +197,40 @@ mod tests {
         let input = "A0016C880162017C3686B18A3D4780";
         let output = Packet::parse(input);
         assert_eq!(output.version_sum(), 31);
+    }
+
+    #[test]
+    fn test_task2_examples() {
+        let input = "C200B40A82";
+        let output = Packet::parse(input);
+        assert_eq!(output.evaluate(), 3);
+
+        let input = "04005AC33890";
+        let output = Packet::parse(input);
+        assert_eq!(output.evaluate(), 54);
+
+        let input = "880086C3E88112";
+        let output = Packet::parse(input);
+        assert_eq!(output.evaluate(), 7);
+
+        let input = "CE00C43D881120";
+        let output = Packet::parse(input);
+        assert_eq!(output.evaluate(), 9);
+
+        let input = "D8005AC2A8F0";
+        let output = Packet::parse(input);
+        assert_eq!(output.evaluate(), 1);
+
+        let input = "F600BC2D8F";
+        let output = Packet::parse(input);
+        assert_eq!(output.evaluate(), 0);
+
+        let input = "9C005AC2F8F0";
+        let output = Packet::parse(input);
+        assert_eq!(output.evaluate(), 0);
+
+        let input = "9C0141080250320F1802104A08";
+        let output = Packet::parse(input);
+        assert_eq!(output.evaluate(), 1);
     }
 }
